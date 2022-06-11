@@ -3,12 +3,13 @@
  * https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver/MutationObserver
  * document.querySelectorAll('[src^="/static/flags"]')
  */
+
 class GGHelper {
 
 	constructor()
 	{
 		this.name = "gh";
-		this.version = .68;
+		this.version = .81;
 		this.t1 = new Date();
 
 		this.countries = {
@@ -261,27 +262,82 @@ class GGHelper {
 
 		// noinspection JSUnusedGlobalSymbols
 		this.interval_tick_nr = 0;
+		// noinspection JSUnusedGlobalSymbols
 		this.interval_id = null;
 		this.runInterval();
 	}
 
 	init()
 	{
+		// Stand: 2022-06-11
+		let exampleHtml = `<div class="countries-game-overview_overviewWrongGuesses__K794O" style="height: 4.9375rem;">
+	<div class="countries-game-overview_wrongGuesses__rS8j_" style="height: 4.9375rem; opacity: 1;"><h1
+		class="countries-game-overview_wrongGuessesHeading__u5QOB">Already made guesses</h1>
+		<div class="countries-game-overview_wrongGuessesFlags__7YiqE">
+			<div class="countries-game-overview_wrongGuessesFlag__xq_M0" data-land="Tschechien"><img
+				class="country-flag_flag__EOWp2" src="/static/flags/CZ.svg" alt="Czech Republic"></div>
+			<div class="countries-game-overview_wrongGuessesFlag__xq_M0" data-land="Slowakei"><img
+				class="country-flag_flag__EOWp2" src="/static/flags/SK.svg" alt="Slovakia"></div>
+			<div class="countries-game-overview_wrongGuessesFlag__xq_M0" data-land="Polen"><img
+				class="country-flag_flag__EOWp2" src="/static/flags/PL.svg" alt="Poland"></div>
+		</div>
+	</div>
+</div>
+		`;
+
 		// language=CSS
 		let css = `
-			.player-list {
-				margin-top : 10em;
+
+			img[class^="country-flag_flag__"] {
 			}
 
-			.wrong-guesses {
+			.game-state-overview__player-list {
+				/* weil die Spieler items zu hoch sind
+				 wieder raus, weil es bei geoguessr wieder kleiner ist */
+				/*transform-origin: top left;*/
+				/*transform: scaleY(.75);*/
+			}
+
+			.player-list {
+				/*margin-top : 10em;*/
+			}
+
+			.player-list__item {
+			}
+
+			.player-list__player {
+				--padding : 0.35rem .5rem;
+				/* weil die Spieler items zu hoch sind; hier Verzerrung von oben korrigieren
+				 wieder raus, weil es bei geoguessr wieder kleiner ist  */
+				/*transform: scaleY(1.3);*/
+			}
+
+			.player-list__player-name {
+				font-style : normal;
+				font-size  : 1.1em;
+
+			}
+
+			*[class^="countries-game-overview_overviewWrongGuesses"],
+			*[class^="countries-game-overview_wrongGuesses__"] /*,
+			.wrong-guesses*/
+			{
 				height : auto !important;
 			}
 
-			.wrong-guesses__flags {
-				grid-template-columns : repeat(5, 1fr);
+			*[class^="countries-game-overview_wrongGuessesFlags__"] /*,
+			.wrong-guesses__flags*/
+			{
+				grid-template-columns : repeat(4, 1fr);
 			}
 
-			.wrong-guesses__flag {
+			.game-state-overview__wrong-guesses {
+				height : auto !important;
+			}
+
+			*[class^="countries-game-overview_wrongGuessesFlag__"] /*,
+			.wrong-guesses__flag*/
+			{
 				display        : flex;
 				flex-direction : column;
 				align-items    : center;
@@ -289,20 +345,27 @@ class GGHelper {
 				font-size      : 90%;
 			}
 
-			.wrong-guesses__flag > * {
+			*[class^="countries-game-overview_wrongGuessesFlag__"] > * /*,
+			.wrong-guesses__flag > **/
+			{
 				flex-grow : 1;
 			}
 
-			.wrong-guesses__flag:after {
-				position   : absolute;
-				top        : 100%;
-				content    : attr(data-land);
-				background : yellow;
-				color      : black;
-				font-size  : .9em;
-				padding    : 0 .1em;
-				display    : inline-block;
-				outline    : 1px solid rgba(0, 0, 0, .2);
+			*[class^="countries-game-overview_wrongGuessesFlag__"]:after /*,
+			.wrong-guesses__flag:after*/
+			{
+				position       : absolute;
+				top            : 100%;
+				content        : attr(data-land);
+				background     : yellow;
+				color          : black;
+				font-size      : 1em;
+				padding        : 0 .1em;
+				display        : inline-block;
+				z-index        : 1;
+				outline        : 1px solid rgba(0, 0, 0, .2);
+				text-transform : capitalize;
+				font-style     : normal;
 			}
 
 			#tgggInfo {
@@ -311,16 +374,16 @@ class GGHelper {
 				z-index          : 999;
 				top              : 0;
 				right            : 0;
-				background-color : rgba(255, 255, 0, .9);
+				background-color : rgba(255, 255, 0, .7);
 				padding          : .2em;
 				text-align       : center;
+				font-size        : 65%;
 			}
 
 			#tgggInfo > span {
-				display   : block;
-				clear     : both;
-				font-size : 70%;
-				color     : dimgray;
+				/*display   : block;*/
+				clear : both;
+				color : dimgray;
 			}
 		`;
 
@@ -331,7 +394,7 @@ class GGHelper {
 
 		const info = document.createElement('div');
 		info.id = "tgggInfo";
-		info.textContent = this.name;
+		info.textContent = this.name + " ";
 		const span = document.createElement('span');
 		span.textContent = this.version;
 		info.append(span);
@@ -342,10 +405,10 @@ class GGHelper {
 
 	onInterval()
 	{
-		if(!(this.interval_tick_nr % 10)) {
+		if(!(this.interval_tick_nr % 60)) {
 			console.log("geoguessr Helper is running. " + this.getYoutubeLikeToDisplay((new Date()) - this.t1));
 		}
-		document.querySelectorAll('.wrong-guesses__flag').forEach(this.setFlagCircleCountry.bind(this));
+		document.querySelectorAll('*[class^="countries-game-overview_wrongGuessesFlag__"]').forEach(this.setFlagCircleCountry.bind(this));
 
 		this.interval_tick_nr++;
 	}
@@ -370,7 +433,7 @@ class GGHelper {
 		}
 		if(newland !== container.dataset.land) {
 			container.dataset.land = newland;
-			console.log("SET", container/*, newland*/);
+			// console.log("SET", container/*, newland*/);
 		}
 	}
 
@@ -395,9 +458,11 @@ class GGHelper {
 			}
 
 			switch(mutation.type) {
-				case 'characterData':
-					break;
+				/*
+								case 'characterData':
+									break;
 
+				*/
 				case 'attributes':
 					if(mutation.target instanceof HTMLElement) {
 						/** @var {HTMLElement} element */
@@ -434,10 +499,10 @@ class GGHelper {
 	{
 		this.observer = new MutationObserver(this.onMutation.bind(this));
 		this.observer.observe(document, {
-			attributes   : true,
-			childList    : true,
-			subtree      : true,
-			characterData: true
+			attributes: true,
+			childList : true,
+			subtree   : true/*,
+			characterData: true*/
 		});
 	}
 
