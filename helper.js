@@ -9,7 +9,7 @@ class GGHelper {
 	constructor()
 	{
 		this.name = "gh";
-		this.version = .81;
+		this.version = .82;
 		this.t1 = new Date();
 
 		this.countries = {
